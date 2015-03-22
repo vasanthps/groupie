@@ -1,0 +1,17 @@
+{
+  "name": "Groupie",
+  "version": "1.0",
+  "manifest_version": 2,
+  "description": "Groups your tabs when lot of tabs are open, to make the navigation between tabs simpler",
+  "homepage_url": "http://insert_web_site_here.com/",
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "permissions": [
+        "tabs"
+  ],
+    "browser_action": {
+        "default_title": "[INSERT WEB SITE NAME HERE] Fetcher",
+        "default_popup": "popup.html"
+  }
+}
