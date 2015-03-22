@@ -60,24 +60,36 @@
             }
         },
         
+        makeParent: function(id) {
+            for(var i in allData) {
+                if(allData[i].id === id) {
+                    allData[i].isParent = true;
+                    allData[i].parent = undefined;
+                    break;
+                }
+            }
+        },
         addOrUpdate: function(tab) {
+            
             if(tab.url.indexOf('chrome-devtools://') !== -1) {
                 return;
             }
             var isParent = tab.url.indexOf('chrome://') === 0;
             if(utils.exists(tab.id)) {
                 utils.updateTab(tab.id, tab.url);
+                console.log('updating')
             } else {
                 utils.addTab(tab.id, tab.url, isParent? undefined: tab.openerTabId);
+                if(!isParent) {
+                    utils.makeParent(tab.openerTabId);
+                }
             }
         },
         
         group: function() {
             var canGroupData = [];
             var tabsToClose = [];
-            if(!isDisabled && allData.length > 15) {
-                console.log(allData);
-                console.log(groupedData);
+            if(!isDisabled && allData.length > 7) {
                 for(var i in allData) {
                     if(allData[i].id !== activeTabId && allData[i].parent !== activeTabId) {
                         canGroupData.push(allData[i]);
@@ -99,15 +111,11 @@
                 
                 isGrouped = true;
                 chrome.tabs.remove(tabsToClose);
-                console.log(allData);
-                console.log(groupedData);
             }
         },
         
         unGroup: function(id) {
             if(groupedData[id]) {
-                console.log(allData);
-                console.log(groupedData);
                 var tabsToUngroup = groupedData[id];
                 var parentIndex = undefined;
                 chrome.tabs.get(id, function(tab) {
@@ -118,12 +126,10 @@
                             active: false,
                             selected: false,
                             url: tabsToUngroup[t].url,
-                            openerTabId: tabsToUngroup[t].parent
-                        })
+                            openerTabId: id
+                        });
                     }
                     delete groupedData[id];
-                    console.log(allData);
-                    console.log(groupedData);
                 });
             }
         },
@@ -135,13 +141,16 @@
         }
     };
     
-    chrome.tabs.onCreated.addListener(function(tab) {
+    /*chrome.tabs.onCreated.addListener(function(tab) {
         utils.addOrUpdate(tab);
         utils.group();
-    });
+    });*/
     
     chrome.tabs.onUpdated.addListener(function(tabId, opts, tab) {
-        utils.addOrUpdate(tab);
+        if(opts.status === 'complete') {
+            utils.addOrUpdate(tab);
+            utils.group();
+        }
     });
     
     chrome.tabs.onRemoved.addListener(function(tabId) {
@@ -152,8 +161,6 @@
         activeTabId = opts.tabId;
         if(isGrouped && groupedData[activeTabId]) {
             utils.unGroup(activeTabId);
-        } else {
-             utils.group();
         }
     });
     
@@ -162,6 +169,7 @@
             for(var i in tabs) {
                 utils.addOrUpdate(tabs[i]);
             }
+            utils.group();
         });
     });
     
